@@ -1,0 +1,15 @@
+[project]
+name = "darween-server"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "websockets>=13.0",
+    "pydantic>=2.0",
+    "noise>=1.2.2",
+    "numpy>=1.26",
+]
+
+[project.scripts]
+darween = "main:run"
