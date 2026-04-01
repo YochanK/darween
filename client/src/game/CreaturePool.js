@@ -6,6 +6,27 @@ import { getTeamColor, createTeamMaterial } from './TeamColors.js';
 const ARCHETYPES = ['fox', 'lion', 'bunny', 'elephant', 'monkey'];
 
 /**
+ * Creates a canvas texture for an emoji string.
+ * @param {string} emoji
+ * @returns {THREE.CanvasTexture}
+ */
+function _createEmojiTexture(emoji) {
+  const size = 64;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, size, size);
+  ctx.font = '48px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(emoji, size / 2, size / 2);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
+}
+
+/**
  * Manages creation, positioning, tinting, and removal of creature meshes.
  *
  * Each creature is an individual cloned mesh positioned in the scene.
@@ -29,6 +50,15 @@ export class CreaturePool {
 
     /** @type {Map<string, { archetype: string, teamColorIndex: number }>} metadata per creature */
     this._meta = new Map();
+
+    /** @type {Map<string, THREE.Sprite>} emoji sprites above creatures */
+    this._emojiSprites = new Map();
+
+    /** @type {Map<string, string>} current emoji per creature (to detect changes) */
+    this._currentEmojis = new Map();
+
+    /** @type {Map<string, THREE.SpriteMaterial>} cached emoji materials by emoji string */
+    this._emojiMaterials = new Map();
 
     /** Group to hold all creature meshes for easy management. */
     this.creatureGroup = new THREE.Group();
@@ -64,12 +94,35 @@ export class CreaturePool {
 
     await Promise.all(promises);
     console.log(`CreaturePool: loaded ${this._templates.size}/${ARCHETYPES.length} archetype models`);
+
+    // Pre-create emoji materials for common emojis
+    this._getOrCreateEmojiMaterial('!');
+    this._getOrCreateEmojiMaterial('\u2694\ufe0f');
+  }
+
+  /**
+   * Get or create a cached SpriteMaterial for the given emoji.
+   * @param {string} emoji
+   * @returns {THREE.SpriteMaterial}
+   */
+  _getOrCreateEmojiMaterial(emoji) {
+    let mat = this._emojiMaterials.get(emoji);
+    if (!mat) {
+      const texture = _createEmojiTexture(emoji);
+      mat = new THREE.SpriteMaterial({
+        map: texture,
+        depthTest: false,
+        transparent: true,
+      });
+      this._emojiMaterials.set(emoji, mat);
+    }
+    return mat;
   }
 
   /**
    * Synchronise the visible creatures with the latest server data.
    *
-   * @param {Object<string, { x: number, y: number, team_color_index: number, archetype: string, anim_state: string }>} creatureData
+   * @param {Object<string, { x: number, y: number, team_color_index: number, archetype: string, anim_state: string, emoji: string|null }>} creatureData
    *   Dict of creature_id -> creature info
    */
   updateCreatures(creatureData) {
@@ -84,7 +137,7 @@ export class CreaturePool {
 
     // Create or update each creature
     for (const [id, data] of Object.entries(creatureData)) {
-      const { x, y, team_color_index, archetype, anim_state } = data;
+      const { x, y, team_color_index, archetype, anim_state, emoji } = data;
 
       let mesh = this._creatures.get(id);
       const meta = this._meta.get(id);
@@ -111,6 +164,49 @@ export class CreaturePool {
 
       // Position: (x, 0.5, y) so creature sits on top of tiles
       mesh.position.set(x, 0.5, y);
+
+      // Emoji bubble
+      this._updateEmoji(id, emoji, x, y);
+    }
+  }
+
+  /**
+   * Update the emoji sprite for a creature.
+   * @param {string} id
+   * @param {string|null} emoji
+   * @param {number} x
+   * @param {number} y
+   */
+  _updateEmoji(id, emoji, x, y) {
+    const currentEmoji = this._currentEmojis.get(id) || null;
+
+    if (emoji && emoji !== currentEmoji) {
+      // New or changed emoji — create/update sprite
+      let sprite = this._emojiSprites.get(id);
+      if (sprite) {
+        this.creatureGroup.remove(sprite);
+      }
+      const mat = this._getOrCreateEmojiMaterial(emoji);
+      sprite = new THREE.Sprite(mat);
+      sprite.scale.set(0.5, 0.5, 1);
+      sprite.position.set(x, 1.3, y);
+      this._emojiSprites.set(id, sprite);
+      this._currentEmojis.set(id, emoji);
+      this.creatureGroup.add(sprite);
+    } else if (emoji && emoji === currentEmoji) {
+      // Same emoji — just update position
+      const sprite = this._emojiSprites.get(id);
+      if (sprite) {
+        sprite.position.set(x, 1.3, y);
+      }
+    } else if (!emoji && currentEmoji) {
+      // Remove emoji
+      const sprite = this._emojiSprites.get(id);
+      if (sprite) {
+        this.creatureGroup.remove(sprite);
+      }
+      this._emojiSprites.delete(id);
+      this._currentEmojis.delete(id);
     }
   }
 
@@ -121,6 +217,13 @@ export class CreaturePool {
   removeCreature(id) {
     this._removeMesh(id);
     this._meta.delete(id);
+    // Clean up emoji sprite
+    const sprite = this._emojiSprites.get(id);
+    if (sprite) {
+      this.creatureGroup.remove(sprite);
+    }
+    this._emojiSprites.delete(id);
+    this._currentEmojis.delete(id);
   }
 
   // ─── Internal ──────────────────────────────────────────────────────────
@@ -200,11 +303,23 @@ export class CreaturePool {
     for (const [id] of this._creatures) {
       this._removeMesh(id);
     }
+    // Clear emoji sprites
+    for (const [id, sprite] of this._emojiSprites) {
+      this.creatureGroup.remove(sprite);
+    }
+    this._emojiSprites.clear();
+    this._currentEmojis.clear();
     this._meta.clear();
   }
 
   dispose() {
     this.clear();
+    // Dispose emoji materials
+    for (const [, mat] of this._emojiMaterials) {
+      mat.map?.dispose();
+      mat.dispose();
+    }
+    this._emojiMaterials.clear();
     this.scene.remove(this.creatureGroup);
   }
 }

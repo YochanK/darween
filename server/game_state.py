@@ -246,6 +246,7 @@ class GameState:
                     "hp": c.hp,
                     "food": c.food,
                     "animation": c.animation,
+                    "emoji": c.emoji,
                 })
 
         apple_list = [
@@ -289,6 +290,7 @@ class GameState:
                 "stats": c.stats,
                 "gene": c.gene,
                 "animation": c.animation,
+                "emoji": c.emoji,
             })
 
         apple_list = [

@@ -110,6 +110,7 @@ socket.on('STATE_UPDATE', (msg) => {
         team_color_index: team?.color_index ?? 0,
         archetype: team?.archetype ?? 'fox',
         anim_state: c.animation || 'idle',
+        emoji: c.emoji || null,
       };
     }
     gameScene.updateCreatures(creatureData);

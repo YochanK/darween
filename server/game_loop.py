@@ -14,6 +14,7 @@ from config import (
     ROTTEN_APPLE_DAMAGE,
     MAX_HP,
     STARTING_CREATURES,
+    FIXED_DT,
 )
 from creature import AIState, Apple, Creature, update_creature
 from food import FoodManager, AppleType
@@ -34,6 +35,8 @@ class GameLoop:
         self._running = False
         self._task: asyncio.Task[None] | None = None
         self._speed: float = 1.0
+        self._dt_accumulator: float = 0.0
+        self._pending_events: list[dict[str, Any]] = []
         # Initialize food manager
         num_players = len(state.teams)
         self.food_manager = FoodManager(state.terrain, state.map_size, num_players)
@@ -69,7 +72,30 @@ class GameLoop:
             prev_time = now
 
             try:
-                await self._tick(dt * self._speed)
+                # Compute total simulation time for this tick
+                total_dt = dt * self._speed
+                self._dt_accumulator += total_dt
+                self._pending_events = []
+
+                # Rebuild spatial hashes once per tick (not per substep)
+                self.state.rebuild_spatial_hashes()
+
+                # Run fixed-size substeps
+                while self._dt_accumulator >= FIXED_DT:
+                    await self._substep(FIXED_DT)
+                    self._dt_accumulator -= FIXED_DT
+
+                # Handle leftover
+                if self._dt_accumulator > 0.001:
+                    await self._substep(self._dt_accumulator)
+                    self._dt_accumulator = 0.0
+
+                # Broadcast once after all substeps
+                snapshot = self.state.get_state_snapshot()
+                snapshot["events"] = self._pending_events
+                snapshot["speed"] = self._speed
+                await self.broadcast(snapshot)
+
             except Exception:
                 logger.exception("Error in game tick %d", self.state.tick)
 
@@ -79,9 +105,10 @@ class GameLoop:
             if sleep_time > 0:
                 await asyncio.sleep(sleep_time)
 
-    # ── Single tick ─────────────────────────────────────────────────────
+    # ── Single substep ─────────────────────────────────────────────────
 
-    async def _tick(self, dt: float) -> None:
+    async def _substep(self, dt: float) -> None:
+        """Run one physics substep of duration *dt*."""
         gs = self.state
         gs.tick += 1
 
@@ -90,12 +117,9 @@ class GameLoop:
 
         # 2. Phase transitions
         phase_events = self._check_phase_transitions()
+        self._pending_events.extend(phase_events)
 
-        # 3. Rebuild spatial hashes for this tick
-        gs.rebuild_spatial_hashes()
-
-        # 4. Update all creatures
-        all_events: list[dict[str, Any]] = []
+        # 3. Update all creatures
         for creature in list(gs.creatures.values()):
             if creature.hp <= 0:
                 continue
@@ -113,28 +137,28 @@ class GameLoop:
                 phase=gs.phase,
                 elapsed_time=gs.time_in_phase,
             )
-            all_events.extend(events)
+            self._pending_events.extend(events)
 
         # Process apple pickups
-        for ev in all_events:
+        for ev in list(self._pending_events):
             if ev["type"] == "apple_pickup":
                 apple = gs.apples.get(ev["apple_id"])
                 if apple is not None:
-                    # Handle rotten apple damage
                     if apple.type == "rotten":
                         c = gs.creatures.get(ev["creature_id"])
                         if c is not None:
                             c.hp = max(0, c.hp - ROTTEN_APPLE_DAMAGE)
                     gs.remove_apple(ev["apple_id"])
 
-        # 5. Combat proximity check (rebuild creature spatial hash first)
+        # 4. Rebuild creature spatial hash for combat check
         gs.spatial_hash.clear()
         for c in gs.creatures.values():
             if c.hp > 0:
                 gs.spatial_hash.insert(c.id, c.x, c.y)
 
+        # 5. Combat proximity check
         combat_events = self._check_combat()
-        all_events.extend(combat_events)
+        self._pending_events.extend(combat_events)
 
         # 6. Spawn apples
         self._spawn_apples(dt)
@@ -143,13 +167,6 @@ class GameLoop:
         winner = gs.check_win_condition()
         if winner is not None:
             await self._handle_game_over(winner)
-            return
-
-        # 8. Broadcast delta state
-        snapshot = gs.get_state_snapshot()
-        snapshot["events"] = all_events + phase_events
-        snapshot["speed"] = self._speed
-        await self.broadcast(snapshot)
 
     # ── Phase transitions ───────────────────────────────────────────────
 
@@ -158,7 +175,6 @@ class GameLoop:
         events: list[dict[str, Any]] = []
 
         if gs.phase == "DAY" and gs.time_in_phase >= DAY_DURATION:
-            # DAY -> NIGHT
             gs.phase = "NIGHT"
             gs.time_in_phase = 0.0
             self._on_night_start()
@@ -169,7 +185,6 @@ class GameLoop:
             })
 
         elif gs.phase == "NIGHT" and gs.time_in_phase >= NIGHT_DURATION:
-            # NIGHT -> DAY
             self._on_night_end()
             gs.phase = "DAY"
             gs.time_in_phase = 0.0
@@ -184,7 +199,6 @@ class GameLoop:
         return events
 
     def _on_day_start(self) -> None:
-        """Reset creatures for a new day."""
         gs = self.state
         for c in gs.creatures.values():
             if c.hp > 0:
@@ -192,25 +206,26 @@ class GameLoop:
                 c.ai_state = AIState.SEEKING_FOOD
                 c.path = []
                 c.animation = "idle"
+                c.emoji = None
+                c.target_creature_id = None
 
     def _on_night_start(self) -> None:
-        """Transition all creatures to return-home behaviour."""
         gs = self.state
         for c in gs.creatures.values():
             if c.hp > 0:
                 c.ai_state = AIState.RETURNING_HOME
                 c.path = []
                 c.animation = "walk"
+                c.emoji = None
+                c.target_creature_id = None
 
     def _on_night_end(self) -> None:
-        """Handle end-of-night: starvation check + reproduction (placeholder)."""
         gs = self.state
         dead_ids: list[int] = []
 
         for c in gs.creatures.values():
             if c.hp <= 0:
                 continue
-            # Starvation: creatures that didn't gather enough food lose HP
             if c.food < 5:
                 deficit = 5 - c.food
                 c.hp = max(0, c.hp - deficit)
@@ -220,14 +235,11 @@ class GameLoop:
                     if team:
                         team.stats["deaths"] += 1
 
-        # Reproduction placeholder -- will be implemented in reproduction.py
         self._reproduce()
 
     def _reproduce(self) -> None:
-        """Run reproduction for all teams."""
         gs = self.state
 
-        # Group creatures by team
         creatures_by_team: dict[str, list] = {}
         for c in gs.creatures.values():
             if c.hp > 0:
@@ -237,8 +249,6 @@ class GameLoop:
 
         new_by_team = process_reproduction(creatures_by_team, gs.houses)
 
-        # Create new creatures from reproduction results
-        import itertools
         for team_id, new_list in new_by_team.items():
             team = gs.teams.get(team_id)
             if team:
@@ -261,7 +271,6 @@ class GameLoop:
     # ── Combat ──────────────────────────────────────────────────────────
 
     def _check_combat(self) -> list[dict[str, Any]]:
-        """Check proximity between enemy creatures and resolve fights."""
         gs = self.state
         events: list[dict[str, Any]] = []
         fought: set[tuple[int, int]] = set()
@@ -289,11 +298,9 @@ class GameLoop:
     # ── Apple spawning ────────────────────────────────────────────────
 
     def _spawn_apples(self, dt: float) -> None:
-        """Spawn apples using the FoodManager."""
         gs = self.state
         self.food_manager.update(dt)
 
-        # Sync food manager apples to game state
         for apple in self.food_manager.added_this_tick:
             type_map = {AppleType.NORMAL: "normal", AppleType.GOLDEN: "golden", AppleType.ROTTEN: "rotten"}
             gs.add_apple(float(apple.x), float(apple.y), type_map.get(apple.apple_type, "normal"))
