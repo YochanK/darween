@@ -21,8 +21,9 @@ export function getTeamColor(colorIndex) {
 }
 
 /**
- * Clone a base material and apply team-color tinting via shader injection.
- * The tint blends 35% of the team color into the diffuse color.
+ * Clone a base material and apply team-color tinting.
+ * MeshStandardMaterial.color multiplies with the base color texture,
+ * so lerping from white toward the team color tints the model naturally.
  *
  * @param {THREE.Material} baseMaterial - Material to clone
  * @param {THREE.Color} teamColor - THREE.Color to tint with
@@ -30,31 +31,8 @@ export function getTeamColor(colorIndex) {
  */
 export function createTeamMaterial(baseMaterial, teamColor) {
   const mat = baseMaterial.clone();
-
-  // Store team color as a uniform-friendly value
-  const tintColor = teamColor.clone();
-
-  mat.onBeforeCompile = (shader) => {
-    // Add team color uniform
-    shader.uniforms.uTeamColor = { value: tintColor };
-
-    // Inject uniform declaration into fragment shader
-    shader.fragmentShader = shader.fragmentShader.replace(
-      '#include <common>',
-      `#include <common>
-uniform vec3 uTeamColor;`
-    );
-
-    // Inject tinting after the diffuse color is computed
-    shader.fragmentShader = shader.fragmentShader.replace(
-      '#include <color_fragment>',
-      `#include <color_fragment>
-diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * uTeamColor, 0.35);`
-    );
-  };
-
-  // Ensure Three.js recompiles the shader for this material
-  mat.customProgramCacheKey = () => `team_${tintColor.getHexString()}`;
-
+  const tint = new THREE.Color(1, 1, 1);
+  tint.lerp(teamColor, 0.75);
+  mat.color.copy(tint);
   return mat;
 }

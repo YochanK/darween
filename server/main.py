@@ -28,6 +28,7 @@ from protocol import (
     room_created,
     room_joined,
     selection_update,
+    speed_changed,
 )
 from rooms import RoomManager
 from ws_handler import ConnectionManager
@@ -246,6 +247,22 @@ async def websocket_endpoint(websocket: WebSocket):
                 loop.start()
 
                 logger.info(f"Game started in room {current_room_code} with {num_players} players")
+
+            # ─── SET_SPEED ────────────────────────────────────────────
+            elif msg_type == MessageType.SET_SPEED:
+                if not current_room_code:
+                    continue
+                loop = game_loops.get(current_room_code)
+                if loop:
+                    try:
+                        speed = float(msg.get("speed", 1))
+                    except (TypeError, ValueError):
+                        speed = 1.0
+                    loop.set_speed(speed)
+                    await conn_manager.broadcast_all(
+                        current_room_code,
+                        speed_changed(loop._speed),
+                    )
 
             # ─── PONG ────────────────────────────────────────────────
             elif msg_type == MessageType.PONG:

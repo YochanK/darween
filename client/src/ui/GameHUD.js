@@ -32,8 +32,35 @@ export class GameHUD {
         }
         .phase-info { display: flex; flex-direction: column; gap: 4px; }
         .phase-label { font-size: 7px; color: #7a5230; }
-        .phase-timer { font-size: 14px; color: #3d2200; letter-spacing: 2px; }
+        .phase-timer { font-size: 14px; color: #3d2200; }
         .turn-label { font-size: 6px; color: #9e7a50; }
+
+        /* ── Speed controls ── */
+        .speed-controls {
+          display: flex; align-items: center; gap: 3px;
+        }
+        .speed-btn {
+          background: url('/assets/ui/buttonSquare_beige.png') center/100% 100% no-repeat;
+          image-rendering: pixelated;
+          border: none;
+          color: #5a3a1a;
+          cursor: pointer;
+          font-family: 'Press Start 2P', monospace;
+          font-size: 6px;
+          width: 28px; height: 28px;
+          padding: 0;
+        }
+        .speed-btn:active {
+          background-image: url('/assets/ui/buttonSquare_beige_pressed.png');
+          padding-top: 2px;
+        }
+        .speed-btn.active {
+          background-image: url('/assets/ui/buttonSquare_brown.png');
+          color: #f5d67a;
+        }
+        .speed-btn.active:active {
+          background-image: url('/assets/ui/buttonSquare_brown_pressed.png');
+        }
 
         /* ── Top-right: my population ── */
         .hud-my-team {
@@ -60,7 +87,8 @@ export class GameHUD {
         .hud-leaderboard::-webkit-scrollbar-track { background: #6b3a00; }
         .hud-leaderboard::-webkit-scrollbar-thumb { background: #f5d67a; }
         .lb-title {
-          font-size: 7px; color: #f5d67a;          margin-bottom: 10px; text-shadow: 1px 1px 0 #3d1a00;
+          font-size: 7px; color: #f5d67a;
+          margin-bottom: 10px; text-shadow: 1px 1px 0 #3d1a00;
         }
         .lb-row {
           display: flex; align-items: center; gap: 8px;
@@ -94,6 +122,13 @@ export class GameHUD {
           <div class="phase-timer" id="hud-timer">2:00</div>
           <div class="turn-label" id="hud-turn">Turn 1</div>
         </div>
+        <div class="speed-controls" id="hud-speed-controls">
+          <button class="speed-btn active" data-speed="1">1×</button>
+          <button class="speed-btn" data-speed="2">2×</button>
+          <button class="speed-btn" data-speed="4">4×</button>
+          <button class="speed-btn" data-speed="8">8×</button>
+          <button class="speed-btn" data-speed="16">16×</button>
+        </div>
       </div>
 
       <div class="hud-my-team">
@@ -117,6 +152,27 @@ export class GameHUD {
     this.myPop = this.el.querySelector('#hud-my-pop');
     this.lbRows = this.el.querySelector('#hud-lb-rows');
     this.bottomBar = this.el.querySelector('#hud-bottom-bar');
+    this.speedControls = this.el.querySelector('#hud-speed-controls');
+
+    /** Set by main.js — called when player clicks a speed button. */
+    this.onSpeedChange = null;
+
+    this.speedControls.addEventListener('click', (e) => {
+      const btn = e.target.closest('.speed-btn');
+      if (!btn) return;
+      const speed = parseFloat(btn.dataset.speed);
+      if (this.onSpeedChange) this.onSpeedChange(speed);
+    });
+  }
+
+  /**
+   * Highlight the active speed button. Called when server confirms speed.
+   * @param {number} speed
+   */
+  setSpeed(speed) {
+    for (const btn of this.speedControls.querySelectorAll('.speed-btn')) {
+      btn.classList.toggle('active', parseFloat(btn.dataset.speed) === speed);
+    }
   }
 
   /**

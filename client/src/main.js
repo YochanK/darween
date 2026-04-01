@@ -92,12 +92,15 @@ socket.on('GAME_START', async (msg) => {
   const overlay = document.getElementById('ui-overlay');
   overlay.innerHTML = '';
 
-  gameScene.loadMap(msg.map_data, msg.map_size, msg.houses);
+  await gameScene.loadMap(msg.map_data, msg.map_size, msg.houses);
   await gameScene.loadCreatures(teamsData);
   gameScene.start();
 
   // Create game HUD
   gameHUD = new GameHUD(overlay);
+  gameHUD.onSpeedChange = (speed) => {
+    socket.send({ type: 'SET_SPEED', speed });
+  };
 });
 
 socket.on('STATE_UPDATE', (msg) => {
@@ -132,6 +135,7 @@ socket.on('STATE_UPDATE', (msg) => {
   // Update HUD
   if (gameHUD) {
     gameHUD.update(msg, myPlayerId, teamsData);
+    if (msg.speed != null) gameHUD.setSpeed(msg.speed);
   }
 });
 
