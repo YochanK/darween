@@ -4,26 +4,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Darween</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1a2e; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0d0d; }
     #app { width: 100%; height: 100%; position: relative; }
     canvas { display: block; }
     #ui-overlay {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
       pointer-events: none;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-family: 'Press Start 2P', monospace;
       color: #fff;
+      image-rendering: pixelated;
     }
     #ui-overlay > * { pointer-events: auto; }
     #status {
       position: absolute;
       bottom: 16px; left: 16px;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.8);
       padding: 8px 16px;
-      border-radius: 8px;
-      font-size: 14px;
+      border-radius: 0;
+      font-size: 8px;
+      font-family: 'Press Start 2P', monospace;
+      color: #c8b89a;
     }
   </style>
 </head>
