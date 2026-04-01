@@ -30,103 +30,121 @@ export class RoomScreen {
           pointer-events: auto;
         }
         .room-box {
-          background: rgba(20, 20, 50, 0.95);
-          border-radius: 20px;
-          padding: 40px;
-          width: 460px;
+          background: url('/assets/ui/panel_brown.png') center/100% 100% no-repeat;
+          image-rendering: pixelated;
+          padding: 44px 44px 40px;
+          width: 480px;
           text-align: center;
-          box-shadow: 0 8px 32px rgba(0,0,0,0.5);
         }
-        .room-code-label { font-size: 13px; color: #888; margin-bottom: 4px; }
-        .room-code {
-          font-size: 36px;
-          font-weight: 700;
-          letter-spacing: 6px;
-          color: #ffcc44;
+        .room-code-label {
+          font-size: 7px;
+          color: #c8a86c;
+          margin-bottom: 8px;
+        }
+        .room-code-wrap {
+          background: url('/assets/ui/panelInset_beige.png') center/100% 100% no-repeat;
+          image-rendering: pixelated;
+          padding: 12px 20px;
+          margin-bottom: 6px;
           cursor: pointer;
-          margin-bottom: 4px;
         }
-        .room-code:hover { text-decoration: underline; }
-        .copy-hint { font-size: 12px; color: #666; margin-bottom: 24px; }
+        .room-code {
+          font-size: 28px;
+          letter-spacing: 8px;
+          color: #3d2200;
+        }
+        .copy-hint {
+          font-size: 7px;
+          color: #9e7a50;
+          margin-bottom: 20px;
+          margin-top: 4px;
+        }
+        .player-count {
+          font-size: 7px;
+          color: #c8a86c;
+          margin-bottom: 10px;
+        }
         .player-list {
           list-style: none;
           padding: 0;
-          margin: 0 0 24px;
-          max-height: 400px;
+          margin: 0 0 20px;
+          max-height: 280px;
           overflow-y: auto;
           text-align: left;
         }
         .player-item {
           display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 10px 16px;
-          background: rgba(255,255,255,0.05);
-          border-radius: 8px;
+          gap: 10px;
+          padding: 10px 14px;
+          background: url('/assets/ui/panelInset_beigeLight.png') center/100% 100% no-repeat;
+          image-rendering: pixelated;
           margin-bottom: 6px;
-          font-size: 15px;
+          font-size: 8px;
+          color: #3d2200;
         }
         .player-dot {
           width: 10px; height: 10px;
           border-radius: 50%;
           flex-shrink: 0;
+          outline: 2px solid rgba(0,0,0,0.3);
         }
         .player-name { flex: 1; }
         .host-badge {
-          font-size: 11px;
-          background: #ffcc44;
-          color: #1a1a2e;
-          padding: 2px 8px;
-          border-radius: 4px;
-          font-weight: 600;
+          font-size: 7px;
+          background: #f5d67a;
+          color: #3d1a00;
+          padding: 2px 6px;
+          border: 2px solid #6b3a00;
         }
         .you-badge {
-          font-size: 11px;
-          background: #4488ff;
-          color: #fff;
-          padding: 2px 8px;
-          border-radius: 4px;
+          font-size: 7px;
+          background: #5b8dd9;
+          color: #e8f4ff;
+          padding: 2px 6px;
+          border: 2px solid #1a3d6b;
         }
         .waiting-text {
-          font-size: 15px;
-          color: #888;
+          font-size: 8px;
+          color: #c8a86c;
           padding: 16px;
+          line-height: 2;
         }
-        .room-btn {
+        .rpg-btn {
+          display: block;
           width: 100%;
-          padding: 14px;
+          padding: 0;
+          height: 49px;
           border: none;
-          border-radius: 10px;
-          font-size: 16px;
-          font-weight: 600;
           cursor: pointer;
-          transition: transform 0.1s;
+          font-family: 'Press Start 2P', monospace;
+          font-size: 9px;
+          background: url('/assets/ui/buttonLong_brown.png') center/100% 100% no-repeat;
+          image-rendering: pixelated;
+          color: #f5d67a;
+          text-shadow: 1px 1px 0 #3d1a00;
         }
-        .room-btn:active { transform: scale(0.97); }
-        .btn-start {
-          background: linear-gradient(135deg, #44dd66, #22aa44);
-          color: #fff;
+        .rpg-btn:active {
+          background-image: url('/assets/ui/buttonLong_brown_pressed.png');
+          padding-top: 4px;
         }
-        .btn-start:disabled {
-          opacity: 0.5;
+        .rpg-btn:disabled {
+          filter: brightness(0.6);
           cursor: not-allowed;
-        }
-        .player-count {
-          font-size: 13px;
-          color: #666;
-          margin-bottom: 16px;
         }
       </style>
       <div class="room-wrapper">
         <div class="room-box">
           <div class="room-code-label">ROOM CODE</div>
-          <div class="room-code" id="room-code-display">${this.roomCode}</div>
+          <div class="room-code-wrap" id="room-code-display">
+            <div class="room-code">${this.roomCode}</div>
+          </div>
           <div class="copy-hint" id="copy-hint">Click to copy</div>
           <div class="player-count" id="player-count">${this.players.length} player${this.players.length !== 1 ? 's' : ''}</div>
           <ul class="player-list" id="player-list"></ul>
           ${this.isHost
-            ? `<button class="room-btn btn-start" id="start-btn">Start Game</button>`
-            : `<div class="waiting-text">Waiting for host to start...</div>`
+            ? `<button class="rpg-btn" id="start-btn">Start Game</button>`
+            : `<div class="waiting-text">Waiting for host...</div>`
           }
         </div>
       </div>
@@ -148,7 +166,6 @@ export class RoomScreen {
     if (this.isHost) {
       const startBtn = container.querySelector('#start-btn');
       startBtn.addEventListener('click', () => {
-        // Transition to selection phase
         this.socket.send({ type: 'START_GAME' });
       });
     }

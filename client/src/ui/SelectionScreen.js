@@ -31,10 +31,16 @@ const GENES = [
   { id: 'aquatic_adaptation', name: 'Aquatic Adaptation', icon: '🌊', description: 'Move at normal speed in water' },
 ];
 
-const STAT_COLORS = {
-  speed: '#44bbff', attack: '#ff5555', defense: '#44dd66',
-  bravery: '#ff8844', visibility: '#ffcc44', endurance: '#aa88ff',
-  sociability: '#ff88cc', fertility: '#88ffcc',
+// Map each stat to the exact Kenney bar mid-segment filename (barBlue uses a non-standard name)
+const STAT_BAR_MID = {
+  speed: 'barBlue_horizontalBlue',
+  attack: 'barRed_horizontalMid',
+  defense: 'barGreen_horizontalMid',
+  bravery: 'barRed_horizontalMid',
+  visibility: 'barYellow_horizontalMid',
+  endurance: 'barGreen_horizontalMid',
+  sociability: 'barYellow_horizontalMid',
+  fertility: 'barBlue_horizontalBlue',
 };
 
 export class SelectionScreen {
@@ -53,49 +59,123 @@ export class SelectionScreen {
     container.innerHTML = `
       <style>
         .sel-wrapper {
-          display: flex; flex-direction: column; align-items: center; justify-content: center;
-          width: 100%; height: 100%; pointer-events: auto; padding: 20px; overflow-y: auto;
+          display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+          width: 100%; height: 100%; pointer-events: auto;
+          padding: 24px 16px; overflow-y: auto;
         }
-        .sel-title { font-size: 28px; font-weight: 700; color: #ffcc44; margin-bottom: 6px; }
-        .sel-subtitle { font-size: 14px; color: #888; margin-bottom: 24px; }
-        .archetype-row { display: flex; gap: 14px; margin-bottom: 28px; flex-wrap: wrap; justify-content: center; }
+        .sel-wrapper::-webkit-scrollbar { width: 8px; }
+        .sel-wrapper::-webkit-scrollbar-track { background: #1a0f00; }
+        .sel-wrapper::-webkit-scrollbar-thumb { background: #6b3a00; }
+
+        .sel-title {
+          font-size: 16px; color: #f5d67a; margin-bottom: 8px;
+          text-shadow: 2px 2px 0 #6b3a00;
+                 }
+        .sel-subtitle { font-size: 7px; color: #c8a86c; margin-bottom: 24px; letter-spacing: 1px; }
+
+        .archetype-row {
+          display: flex; gap: 12px; margin-bottom: 24px;
+          flex-wrap: wrap; justify-content: center;
+        }
         .archetype-card {
-          background: rgba(30, 30, 60, 0.95); border: 3px solid transparent;
-          border-radius: 16px; padding: 16px; width: 155px; text-align: center;
-          cursor: pointer; transition: all 0.15s; position: relative;
+          background: url('/assets/ui/panelInset_beige.png') center/100% 100% no-repeat;
+          image-rendering: pixelated;
+          padding: 14px 12px; width: 148px; text-align: center;
+          cursor: pointer; transition: filter 0.1s; position: relative;
+          border: 4px solid transparent;
+          outline: 4px solid transparent;
         }
-        .archetype-card:hover { border-color: #555; transform: translateY(-3px); }
-        .archetype-card.selected { border-color: #ffcc44; background: rgba(50, 45, 30, 0.95); }
-        .archetype-card.confirmed { opacity: 0.6; pointer-events: none; }
-        .arch-img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 8px; image-rendering: pixelated; }
-        .arch-name { font-size: 16px; font-weight: 700; color: #fff; }
-        .arch-role { font-size: 12px; color: #999; margin-bottom: 10px; }
-        .stat-row { display: flex; align-items: center; gap: 4px; margin-bottom: 3px; }
-        .stat-label { font-size: 10px; color: #aaa; width: 52px; text-align: right; text-transform: uppercase; }
-        .stat-bar-bg { flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
-        .stat-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
-        .gene-section-title { font-size: 18px; font-weight: 600; color: #fff; margin-bottom: 12px; }
-        .gene-row { display: flex; gap: 14px; margin-bottom: 28px; flex-wrap: wrap; justify-content: center; }
+        .archetype-card:hover { filter: brightness(1.08); }
+        .archetype-card.selected {
+          outline: 4px solid #f5d67a;
+          filter: brightness(1.1);
+        }
+        .archetype-card.confirmed { opacity: 0.55; pointer-events: none; }
+
+        .arch-img {
+          width: 72px; height: 72px; object-fit: contain; margin-bottom: 8px;
+          image-rendering: pixelated;
+        }
+        .arch-name { font-size: 8px; color: #3d2200; margin-bottom: 2px; }
+        .arch-role { font-size: 7px; color: #7a5230; margin-bottom: 10px; }
+
+        .stat-row { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+        .stat-label { font-size: 6px; color: #5a3a1a; width: 48px; text-align: right; text-transform: uppercase; }
+        .rpg-bar-outer {
+          flex: 1; height: 10px;
+          background: url('/assets/ui/barBack_horizontalMid.png') repeat-x center / auto 10px;
+          image-rendering: pixelated;
+        }
+        .rpg-bar-inner {
+          height: 10px;
+          image-rendering: pixelated;
+        }
+
+        .gene-section-title {
+          font-size: 12px; color: #f5d67a; margin-bottom: 14px;
+          text-shadow: 2px 2px 0 #6b3a00;
+        }
+        .gene-row {
+          display: flex; gap: 12px; margin-bottom: 24px;
+          flex-wrap: wrap; justify-content: center;
+        }
         .gene-card {
-          background: rgba(30, 30, 60, 0.95); border: 3px solid transparent;
-          border-radius: 14px; padding: 16px 20px; width: 240px; cursor: pointer; transition: all 0.15s;
+          background: url('/assets/ui/panel_beige.png') center/100% 100% no-repeat;
+          image-rendering: pixelated;
+          padding: 18px 20px; width: 220px; cursor: pointer;
+          transition: filter 0.1s;
+          outline: 4px solid transparent;
+          text-align: center;
         }
-        .gene-card:hover { border-color: #555; }
-        .gene-card.selected { border-color: #44bbff; background: rgba(30, 40, 60, 0.95); }
-        .gene-card.confirmed { opacity: 0.6; pointer-events: none; }
-        .gene-icon { font-size: 28px; margin-bottom: 6px; }
-        .gene-name { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 4px; }
-        .gene-desc { font-size: 12px; color: #999; line-height: 1.4; }
+        .gene-card:hover { filter: brightness(1.06); }
+        .gene-card.selected {
+          outline: 4px solid #5b8dd9;
+          filter: brightness(1.08);
+        }
+        .gene-card.confirmed { opacity: 0.55; pointer-events: none; }
+
+        .gene-icon { font-size: 24px; margin-bottom: 8px; }
+        .gene-name { font-size: 8px; color: #3d2200; margin-bottom: 6px; }
+        .gene-desc { font-size: 6px; color: #7a5230; line-height: 2; }
+
         .confirm-btn {
-          padding: 14px 48px; border: none; border-radius: 12px; font-size: 16px;
-          font-weight: 600; cursor: pointer; transition: all 0.15s;
-          background: linear-gradient(135deg, #44dd66, #22aa44); color: #fff;
+          display: block; width: 280px; height: 49px;
+          border: none; cursor: pointer;
+          font-family: 'Press Start 2P', monospace; font-size: 9px;
+                   background: url('/assets/ui/buttonLong_brown.png') center/100% 100% no-repeat;
+          image-rendering: pixelated;
+          color: #f5d67a;
+          text-shadow: 1px 1px 0 #3d1a00;
+          transition: filter 0.05s;
         }
-        .confirm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .confirm-btn:not(:disabled):hover { transform: scale(1.03); }
-        .confirm-btn.confirmed-state { background: #555; color: #aaa; }
+        .confirm-btn:disabled { filter: brightness(0.5); cursor: not-allowed; }
+        .confirm-btn:not(:disabled):active {
+          background-image: url('/assets/ui/buttonLong_brown_pressed.png');
+          padding-top: 4px;
+        }
+        .confirm-btn.confirmed-state {
+          background-image: url('/assets/ui/buttonLong_grey.png');
+          color: #aaa;
+          text-shadow: none;
+        }
+        .launch-btn {
+          display: none; width: 280px; height: 49px; margin-top: 10px;
+          border: none; cursor: pointer;
+          font-family: 'Press Start 2P', monospace; font-size: 9px;
+                   background: url('/assets/ui/buttonLong_beige.png') center/100% 100% no-repeat;
+          image-rendering: pixelated;
+          color: #3d2200;
+          text-shadow: 1px 1px 0 rgba(255,255,255,0.3);
+        }
+        .launch-btn:not(:disabled):active {
+          background-image: url('/assets/ui/buttonLong_beige_pressed.png');
+          padding-top: 4px;
+        }
+        .launch-btn:disabled { filter: brightness(0.5); cursor: not-allowed; }
+
         .other-selections {
-          margin-top: 16px; font-size: 13px; color: #666; text-align: center;
+          margin-top: 14px; font-size: 7px; color: #c8a86c; text-align: center;
+          letter-spacing: 1px; line-height: 2;
         }
       </style>
       <div class="sel-wrapper">
@@ -111,8 +191,8 @@ export class SelectionScreen {
               ${Object.entries(a.stats).map(([key, val]) => `
                 <div class="stat-row">
                   <span class="stat-label">${key}</span>
-                  <div class="stat-bar-bg">
-                    <div class="stat-bar-fill" style="width:${val * 10}%; background:${STAT_COLORS[key] || '#888'}"></div>
+                  <div class="rpg-bar-outer">
+                    <div class="rpg-bar-inner" style="width:${val * 10}%; background: url('/assets/ui/${STAT_BAR_MID[key]}.png') repeat-x center / auto 10px;"></div>
                   </div>
                 </div>
               `).join('')}
@@ -131,8 +211,8 @@ export class SelectionScreen {
           `).join('')}
         </div>
 
-        <button class="confirm-btn" id="confirm-btn" disabled>Confirm Selection</button>
-        ${isHost ? `<button class="confirm-btn" id="launch-btn" disabled style="margin-top:12px; background:linear-gradient(135deg,#ffcc44,#ff9900); color:#1a1a2e; display:none;">Launch Game</button>` : ''}
+        <button class="confirm-btn" id="confirm-btn" disabled>Confirm</button>
+        ${isHost ? `<button class="launch-btn" id="launch-btn" disabled>Launch Game</button>` : ''}
         <div class="other-selections" id="other-selections"></div>
       </div>
     `;
@@ -167,7 +247,7 @@ export class SelectionScreen {
     confirmBtn.addEventListener('click', () => {
       if (!this.selectedArchetype || !this.selectedGene || this.confirmed) return;
       this.confirmed = true;
-      confirmBtn.textContent = 'Confirmed ✓';
+      confirmBtn.textContent = 'Confirmed!';
       confirmBtn.classList.add('confirmed-state');
       confirmBtn.disabled = true;
       container.querySelectorAll('.archetype-card, .gene-card').forEach(c => c.classList.add('confirmed'));
@@ -186,7 +266,6 @@ export class SelectionScreen {
     this._onSelectionUpdate = (msg) => {
       this.otherPlayers[msg.player_id] = msg;
       this._renderOtherSelections(container.querySelector('#other-selections'));
-      // Show launch button when all confirmed
       if (launchBtn) {
         const allConfirmed = Object.values(this.otherPlayers).every(p => p.confirmed);
         if (allConfirmed && Object.keys(this.otherPlayers).length > 0) {

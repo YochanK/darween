@@ -11,78 +11,94 @@ export class GameHUD {
           pointer-events: none;
           position: absolute;
           top: 0; left: 0; right: 0; bottom: 0;
-          font-family: 'Segoe UI', system-ui, sans-serif;
+          font-family: 'Press Start 2P', monospace;
           color: #fff;
+          image-rendering: pixelated;
         }
         #game-hud > * { pointer-events: auto; }
 
-        .hud-top-bar {
-          position: absolute; top: 0; left: 0; right: 0;
-          display: flex; justify-content: space-between; align-items: center;
-          padding: 12px 20px;
-          background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
-        }
-
-        .hud-phase {
-          display: flex; align-items: center; gap: 10px;
+        /* ── Top-left: phase box ── */
+        .hud-phase-box {
+          position: absolute; top: 12px; left: 12px;
+          background: url('/assets/ui/panelInset_beige.png') center/100% 100% no-repeat;
+          image-rendering: pixelated;
+          padding: 10px 16px;
+          display: flex; align-items: center; gap: 12px;
+          min-width: 180px;
         }
         .phase-icon {
-          width: 32px; height: 32px; border-radius: 50%;
-          display: flex; align-items: center; justify-content: center;
-          font-size: 18px;
-          transition: background 0.5s;
+          font-size: 20px;
+          line-height: 1;
         }
-        .phase-icon.day { background: #ffcc44; }
-        .phase-icon.night { background: #3344aa; }
-        .phase-label { font-size: 14px; font-weight: 600; }
-        .phase-timer { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
-        .turn-label { font-size: 12px; color: #aaa; }
+        .phase-info { display: flex; flex-direction: column; gap: 4px; }
+        .phase-label { font-size: 7px; color: #7a5230; }
+        .phase-timer { font-size: 14px; color: #3d2200; letter-spacing: 2px; }
+        .turn-label { font-size: 6px; color: #9e7a50; }
 
+        /* ── Top-right: my population ── */
         .hud-my-team {
-          text-align: right;
+          position: absolute; top: 12px; right: 12px;
+          background: url('/assets/ui/panelInset_beige.png') center/100% 100% no-repeat;
+          image-rendering: pixelated;
+          padding: 10px 20px;
+          text-align: center;
+          min-width: 120px;
         }
-        .my-pop { font-size: 28px; font-weight: 700; }
-        .my-pop-label { font-size: 12px; color: #aaa; }
-        .my-food-label { font-size: 12px; color: #aaa; }
+        .my-pop { font-size: 22px; color: #3d2200; }
+        .my-pop-label { font-size: 6px; color: #7a5230; margin-top: 4px; }
 
+        /* ── Leaderboard ── */
         .hud-leaderboard {
-          position: absolute; top: 60px; right: 16px;
-          background: rgba(0,0,0,0.6); border-radius: 12px;
-          padding: 12px 16px; min-width: 200px;
-          max-height: 300px; overflow-y: auto;
+          position: absolute; top: 90px; right: 12px;
+          background: url('/assets/ui/panel_brown.png') center/100% 100% no-repeat;
+          image-rendering: pixelated;
+          padding: 16px 18px;
+          min-width: 200px;
+          max-height: 280px; overflow-y: auto;
         }
-        .lb-title { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .hud-leaderboard::-webkit-scrollbar { width: 6px; }
+        .hud-leaderboard::-webkit-scrollbar-track { background: #6b3a00; }
+        .hud-leaderboard::-webkit-scrollbar-thumb { background: #f5d67a; }
+        .lb-title {
+          font-size: 7px; color: #f5d67a;          margin-bottom: 10px; text-shadow: 1px 1px 0 #3d1a00;
+        }
         .lb-row {
           display: flex; align-items: center; gap: 8px;
-          padding: 4px 0; font-size: 13px;
+          padding: 5px 0; font-size: 7px; color: #c8a86c;
+          border-bottom: 1px solid rgba(245,214,122,0.15);
         }
-        .lb-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .lb-row:last-child { border-bottom: none; }
+        .lb-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; outline: 1px solid rgba(0,0,0,0.4); }
         .lb-name { flex: 1; }
-        .lb-pop { font-weight: 600; font-variant-numeric: tabular-nums; }
-        .lb-you { color: #ffcc44; }
+        .lb-pop { color: #f5d67a; text-shadow: 1px 1px 0 #3d1a00; }
+        .lb-you .lb-name { color: #f5d67a; }
 
+        /* ── Bottom stats bar ── */
         .hud-bottom-bar {
           position: absolute; bottom: 0; left: 0; right: 0;
-          padding: 8px 20px;
-          background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
-          display: flex; justify-content: center; gap: 24px;
-          font-size: 12px; color: #aaa;
+          background: url('/assets/ui/panelInset_brown.png') center/100% 100% no-repeat;
+          image-rendering: pixelated;
+          padding: 10px 24px;
+          display: flex; justify-content: center; gap: 32px;
+          font-size: 7px; color: #c8a86c;
         }
+        .hud-stat { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .hud-stat-val { font-size: 10px; color: #f5d67a; text-shadow: 1px 1px 0 #3d1a00; }
+        .hud-stat-label { font-size: 6px; color: #9e7a50; }
       </style>
 
-      <div class="hud-top-bar">
-        <div class="hud-phase">
-          <div class="phase-icon day" id="hud-phase-icon">☀</div>
-          <div>
-            <div class="phase-label" id="hud-phase-label">DAY</div>
-            <div class="turn-label" id="hud-turn">Turn 1</div>
-          </div>
+      <div class="hud-phase-box">
+        <div class="phase-icon" id="hud-phase-icon">☀</div>
+        <div class="phase-info">
+          <div class="phase-label" id="hud-phase-label">DAY</div>
           <div class="phase-timer" id="hud-timer">2:00</div>
+          <div class="turn-label" id="hud-turn">Turn 1</div>
         </div>
-        <div class="hud-my-team">
-          <div class="my-pop" id="hud-my-pop">5</div>
-          <div class="my-pop-label">Your Population</div>
-        </div>
+      </div>
+
+      <div class="hud-my-team">
+        <div class="my-pop" id="hud-my-pop">5</div>
+        <div class="my-pop-label">Population</div>
       </div>
 
       <div class="hud-leaderboard" id="hud-leaderboard">
@@ -115,13 +131,11 @@ export class GameHUD {
     // Phase icon
     if (phase === 'DAY') {
       this.phaseIcon.textContent = '☀';
-      this.phaseIcon.className = 'phase-icon day';
       this.phaseLabel.textContent = 'DAY';
       const remaining = Math.max(0, 120 - timeInPhase);
       this.timer.textContent = this._formatTime(remaining);
     } else {
       this.phaseIcon.textContent = '🌙';
-      this.phaseIcon.className = 'phase-icon night';
       this.phaseLabel.textContent = 'NIGHT';
       const remaining = Math.max(0, 20 - timeInPhase);
       this.timer.textContent = this._formatTime(remaining);
@@ -153,7 +167,7 @@ export class GameHUD {
     this.lbRows.innerHTML = entries.map((e, i) => `
       <div class="lb-row ${e.isMe ? 'lb-you' : ''}">
         <span class="lb-dot" style="background:${TEAM_COLORS[e.colorIndex % TEAM_COLORS.length]}"></span>
-        <span class="lb-name">${i + 1}. ${this._esc(e.name)}${e.isMe ? ' (you)' : ''}</span>
+        <span class="lb-name">${i + 1}. ${this._esc(e.name)}${e.isMe ? ' ★' : ''}</span>
         <span class="lb-pop">${e.pop}</span>
       </div>
     `).join('');
@@ -161,10 +175,10 @@ export class GameHUD {
     // Bottom bar stats
     if (myStats) {
       this.bottomBar.innerHTML = `
-        <span>Births: ${myStats.births || 0}</span>
-        <span>Deaths: ${myStats.deaths || 0}</span>
-        <span>Dmg Dealt: ${myStats.damage_dealt || 0}</span>
-        <span>Dmg Taken: ${myStats.damage_taken || 0}</span>
+        <div class="hud-stat"><div class="hud-stat-val">${myStats.births || 0}</div><div class="hud-stat-label">Births</div></div>
+        <div class="hud-stat"><div class="hud-stat-val">${myStats.deaths || 0}</div><div class="hud-stat-label">Deaths</div></div>
+        <div class="hud-stat"><div class="hud-stat-val">${myStats.damage_dealt || 0}</div><div class="hud-stat-label">Dmg Dealt</div></div>
+        <div class="hud-stat"><div class="hud-stat-val">${myStats.damage_taken || 0}</div><div class="hud-stat-label">Dmg Taken</div></div>
       `;
     }
   }
