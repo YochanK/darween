@@ -38,6 +38,27 @@ export class GameHUD {
         .phase-timer { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
         .turn-label { font-size: 12px; color: #aaa; }
 
+        .speed-controls {
+          display: flex; align-items: center; gap: 4px;
+        }
+        .speed-btn {
+          background: rgba(255,255,255,0.1);
+          border: 1px solid rgba(255,255,255,0.2);
+          border-radius: 6px;
+          color: #aaa;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: 600;
+          padding: 4px 8px;
+          transition: background 0.15s, color 0.15s;
+        }
+        .speed-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
+        .speed-btn.active {
+          background: #ffcc44;
+          border-color: #ffcc44;
+          color: #111;
+        }
+
         .hud-my-team {
           text-align: right;
         }
@@ -79,6 +100,13 @@ export class GameHUD {
           </div>
           <div class="phase-timer" id="hud-timer">2:00</div>
         </div>
+        <div class="speed-controls" id="hud-speed-controls">
+          <button class="speed-btn active" data-speed="1">1×</button>
+          <button class="speed-btn" data-speed="2">2×</button>
+          <button class="speed-btn" data-speed="4">4×</button>
+          <button class="speed-btn" data-speed="8">8×</button>
+          <button class="speed-btn" data-speed="16">16×</button>
+        </div>
         <div class="hud-my-team">
           <div class="my-pop" id="hud-my-pop">5</div>
           <div class="my-pop-label">Your Population</div>
@@ -101,6 +129,27 @@ export class GameHUD {
     this.myPop = this.el.querySelector('#hud-my-pop');
     this.lbRows = this.el.querySelector('#hud-lb-rows');
     this.bottomBar = this.el.querySelector('#hud-bottom-bar');
+    this.speedControls = this.el.querySelector('#hud-speed-controls');
+
+    /** Set by main.js — called when player clicks a speed button. */
+    this.onSpeedChange = null;
+
+    this.speedControls.addEventListener('click', (e) => {
+      const btn = e.target.closest('.speed-btn');
+      if (!btn) return;
+      const speed = parseFloat(btn.dataset.speed);
+      if (this.onSpeedChange) this.onSpeedChange(speed);
+    });
+  }
+
+  /**
+   * Highlight the active speed button. Called when server confirms speed.
+   * @param {number} speed
+   */
+  setSpeed(speed) {
+    for (const btn of this.speedControls.querySelectorAll('.speed-btn')) {
+      btn.classList.toggle('active', parseFloat(btn.dataset.speed) === speed);
+    }
   }
 
   /**

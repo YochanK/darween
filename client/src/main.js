@@ -91,6 +91,9 @@ socket.on('GAME_START', async (msg) => {
 
   // Create game HUD
   gameHUD = new GameHUD(overlay);
+  gameHUD.onSpeedChange = (speed) => {
+    socket.send({ type: 'SET_SPEED', speed });
+  };
 });
 
 socket.on('STATE_UPDATE', (msg) => {
@@ -125,6 +128,7 @@ socket.on('STATE_UPDATE', (msg) => {
   // Update HUD
   if (gameHUD) {
     gameHUD.update(msg, myPlayerId, teamsData);
+    if (msg.speed != null) gameHUD.setSpeed(msg.speed);
   }
 });
 
