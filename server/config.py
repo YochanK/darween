@@ -48,6 +48,22 @@ SUGAR_RUSH_DURATION = 3.0  # seconds
 SUGAR_RUSH_SPEED_MULT = 1.5
 ROTTEN_APPLE_DAMAGE = 5
 
+# Steering / physics
+FIXED_DT = 0.016            # 16ms physics substep
+MAX_FORCE = 5.0              # max steering force magnitude
+SEPARATION_RADIUS = 0.6      # tiles — creatures repel within this range
+SEPARATION_WEIGHT = 2.0      # separation force multiplier
+SLOWING_RADIUS = 1.0         # tiles — arrive behavior slow-down zone
+WANDER_CIRCLE_DISTANCE = 1.0 # tiles ahead to project wander circle
+WANDER_CIRCLE_RADIUS = 0.5   # radius of wander circle
+WANDER_ANGLE_DELTA = 0.3     # max random change per step (radians)
+ALERT_DURATION = 0.4         # seconds to freeze in alert state
+PURSUIT_GIVE_UP_DIST = 5.0   # tiles — stop pursuing/fleeing beyond this
+FIGHT_RANGE = 0.5            # tiles — enter fight state
+FIGHT_ORBIT_DIST = 0.8       # tiles — orbit distance during fight
+FIGHT_LUNGE_CHANCE = 0.02    # per-substep probability of lunging
+FIGHT_LUNGE_SPEED_MULT = 1.5 # lunge speed multiplier
+
 # Reproduction
 MUTATION_CHANCE = 0.2  # per stat
 MUTATION_RANGE = 1  # +/- this amount
