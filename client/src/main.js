@@ -5,8 +5,12 @@ import { LobbyScreen } from './ui/LobbyScreen.js';
 import { RoomScreen } from './ui/RoomScreen.js';
 import { SelectionScreen } from './ui/SelectionScreen.js';
 import { GameHUD } from './ui/GameHUD.js';
+import { createMapBackground } from './ui/mapBackground.js';
 
 const app = document.getElementById('app');
+
+// Persistent pixel map background — visible on all pre-game screens
+const bgMap = createMapBackground(app);
 
 // ─── Socket ──────────────────────────────────────────────────────────────
 const socket = new GameSocket();
@@ -75,6 +79,9 @@ let gameHUD = null;
 
 socket.on('GAME_START', async (msg) => {
   teamsData = msg.teams;
+
+  // Hide background map — Three.js canvas takes over
+  bgMap.style.display = 'none';
 
   // Initialize Three.js scene and render the map
   if (!gameScene) {
