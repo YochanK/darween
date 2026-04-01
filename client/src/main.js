@@ -85,7 +85,7 @@ socket.on('GAME_START', async (msg) => {
   const overlay = document.getElementById('ui-overlay');
   overlay.innerHTML = '';
 
-  gameScene.loadMap(msg.map_data, msg.map_size, msg.houses);
+  await gameScene.loadMap(msg.map_data, msg.map_size, msg.houses);
   await gameScene.loadCreatures(teamsData);
   gameScene.start();
 

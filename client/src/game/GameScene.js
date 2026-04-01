@@ -64,8 +64,8 @@ export class GameScene {
   /**
    * Load map data from server and render it.
    */
-  loadMap(mapData, mapSize, houses) {
-    this.mapRenderer.build(mapData, mapSize);
+  async loadMap(mapData, mapSize, houses) {
+    await this.mapRenderer.build(mapData, mapSize);
 
     // Center camera on map
     const center = mapSize / 2;
