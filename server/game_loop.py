@@ -33,9 +33,15 @@ class GameLoop:
         self.broadcast = broadcast
         self._running = False
         self._task: asyncio.Task[None] | None = None
+        self._speed: float = 1.0
         # Initialize food manager
         num_players = len(state.teams)
         self.food_manager = FoodManager(state.terrain, state.map_size, num_players)
+
+    def set_speed(self, speed: float) -> None:
+        """Set the simulation speed multiplier. Clamped to valid options."""
+        valid = [1.0, 2.0, 4.0, 8.0, 16.0]
+        self._speed = min(valid, key=lambda v: abs(v - float(speed)))
 
     # ── Lifecycle ───────────────────────────────────────────────────────
 
@@ -63,7 +69,7 @@ class GameLoop:
             prev_time = now
 
             try:
-                await self._tick(dt)
+                await self._tick(dt * self._speed)
             except Exception:
                 logger.exception("Error in game tick %d", self.state.tick)
 
@@ -130,8 +136,8 @@ class GameLoop:
         combat_events = self._check_combat()
         all_events.extend(combat_events)
 
-        # 6. Spawn apples (placeholder)
-        self._spawn_apples()
+        # 6. Spawn apples
+        self._spawn_apples(dt)
 
         # 7. Win condition
         winner = gs.check_win_condition()
@@ -142,6 +148,7 @@ class GameLoop:
         # 8. Broadcast delta state
         snapshot = gs.get_state_snapshot()
         snapshot["events"] = all_events + phase_events
+        snapshot["speed"] = self._speed
         await self.broadcast(snapshot)
 
     # ── Phase transitions ───────────────────────────────────────────────
@@ -281,10 +288,9 @@ class GameLoop:
 
     # ── Apple spawning ────────────────────────────────────────────────
 
-    def _spawn_apples(self) -> None:
+    def _spawn_apples(self, dt: float) -> None:
         """Spawn apples using the FoodManager."""
         gs = self.state
-        dt = TICK_INTERVAL
         self.food_manager.update(dt)
 
         # Sync food manager apples to game state

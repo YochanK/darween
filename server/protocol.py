@@ -19,6 +19,7 @@ class MessageType(str, Enum):
     CONFIRM_SELECTION = "CONFIRM_SELECTION"
     START_GAME = "START_GAME"
     PONG = "PONG"
+    SET_SPEED = "SET_SPEED"
 
     # Server -> Client
     ROOM_CREATED = "ROOM_CREATED"
@@ -36,6 +37,7 @@ class MessageType(str, Enum):
     GAME_OVER = "GAME_OVER"
     PING = "PING"
     ERROR = "ERROR"
+    SPEED_CHANGED = "SPEED_CHANGED"
 
 
 class RoomState(str, Enum):
@@ -132,6 +134,10 @@ def phase_change(phase: str, turn_number: int, time_remaining: float) -> dict:
         "turn_number": turn_number,
         "time_remaining": time_remaining,
     }
+
+
+def speed_changed(speed: float) -> dict:
+    return {"type": MessageType.SPEED_CHANGED, "speed": speed}
 
 
 def game_over(winner_team_id: str, final_stats: dict) -> dict:
