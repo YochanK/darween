@@ -59,6 +59,24 @@ export class GameHUD {
           color: #111;
         }
 
+        .stats-toggle-btn {
+          background: rgba(255,255,255,0.1);
+          border: 1px solid rgba(255,255,255,0.2);
+          border-radius: 6px;
+          color: #aaa;
+          cursor: pointer;
+          font-size: 14px;
+          padding: 4px 10px;
+          margin-left: 10px;
+          transition: background 0.15s, color 0.15s;
+        }
+        .stats-toggle-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
+        .stats-toggle-btn.active {
+          background: #ffcc44;
+          border-color: #ffcc44;
+          color: #111;
+        }
+
         .hud-my-team {
           text-align: right;
         }
@@ -100,12 +118,15 @@ export class GameHUD {
           </div>
           <div class="phase-timer" id="hud-timer">2:00</div>
         </div>
-        <div class="speed-controls" id="hud-speed-controls">
-          <button class="speed-btn active" data-speed="1">1×</button>
-          <button class="speed-btn" data-speed="2">2×</button>
-          <button class="speed-btn" data-speed="4">4×</button>
-          <button class="speed-btn" data-speed="8">8×</button>
-          <button class="speed-btn" data-speed="16">16×</button>
+        <div style="display:flex;align-items:center">
+          <div class="speed-controls" id="hud-speed-controls">
+            <button class="speed-btn active" data-speed="1">1×</button>
+            <button class="speed-btn" data-speed="2">2×</button>
+            <button class="speed-btn" data-speed="4">4×</button>
+            <button class="speed-btn" data-speed="8">8×</button>
+            <button class="speed-btn" data-speed="16">16×</button>
+          </div>
+          <button class="stats-toggle-btn" id="hud-stats-toggle" title="Toggle statistics panel">📊</button>
         </div>
         <div class="hud-my-team">
           <div class="my-pop" id="hud-my-pop">5</div>
@@ -133,6 +154,16 @@ export class GameHUD {
 
     /** Set by main.js — called when player clicks a speed button. */
     this.onSpeedChange = null;
+    /** Set by main.js — called when player toggles the stats panel. */
+    this.onStatsToggle = null;
+
+    this.statsToggle = this.el.querySelector('#hud-stats-toggle');
+    this.statsToggle.addEventListener('click', () => {
+      if (this.onStatsToggle) {
+        const active = this.onStatsToggle();
+        this.statsToggle.classList.toggle('active', active);
+      }
+    });
 
     this.speedControls.addEventListener('click', (e) => {
       const btn = e.target.closest('.speed-btn');

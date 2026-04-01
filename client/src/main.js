@@ -5,6 +5,7 @@ import { LobbyScreen } from './ui/LobbyScreen.js';
 import { RoomScreen } from './ui/RoomScreen.js';
 import { SelectionScreen } from './ui/SelectionScreen.js';
 import { GameHUD } from './ui/GameHUD.js';
+import { StatsPanel } from './ui/StatsPanel.js';
 
 const app = document.getElementById('app');
 
@@ -72,6 +73,7 @@ socket.on('GOTO_SELECTION', () => {
 // Store teams data for mapping team_id -> archetype/color
 let teamsData = {};
 let gameHUD = null;
+let statsPanel = null;
 
 socket.on('GAME_START', async (msg) => {
   teamsData = msg.teams;
@@ -89,11 +91,13 @@ socket.on('GAME_START', async (msg) => {
   await gameScene.loadCreatures(teamsData);
   gameScene.start();
 
-  // Create game HUD
+  // Create game HUD + stats panel
   gameHUD = new GameHUD(overlay);
+  statsPanel = new StatsPanel(overlay);
   gameHUD.onSpeedChange = (speed) => {
     socket.send({ type: 'SET_SPEED', speed });
   };
+  gameHUD.onStatsToggle = () => statsPanel.toggle();
 });
 
 socket.on('STATE_UPDATE', (msg) => {
@@ -125,10 +129,13 @@ socket.on('STATE_UPDATE', (msg) => {
     gameScene.setPhase(msg.phase);
   }
 
-  // Update HUD
+  // Update HUD + stats panel
   if (gameHUD) {
     gameHUD.update(msg, myPlayerId, teamsData);
     if (msg.speed != null) gameHUD.setSpeed(msg.speed);
+  }
+  if (statsPanel) {
+    statsPanel.push(msg, teamsData);
   }
 });
 
