@@ -1,5 +1,7 @@
 # Darween
 
+[![GitHub](https://img.shields.io/github/stars/YochanK/darween?style=social)](https://github.com/YochanK/darween)
+
 A real-time multiplayer creature evolution game. Players compete in matches where AI-driven creatures forage, fight, breed, and evolve on a procedurally generated map.
 
 ## Features
