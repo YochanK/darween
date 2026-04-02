@@ -1,0 +1,31 @@
+# flyctl launch added from .gitignore
+# Dependencies
+**/node_modules
+**/server/.venv
+
+# Build output
+**/client/dist
+
+# Python
+**/__pycache__
+**/*.pyc
+**/*.pyo
+
+# OS
+**/.DS_Store
+**/Thumbs.db
+
+# IDE
+**/.vscode
+**/.idea
+
+# Env
+**/.env
+**/.env.local
+
+# Lockfiles managed by tools
+**/package-lock.json
+
+# Test artifacts
+tmp
+fly.toml
